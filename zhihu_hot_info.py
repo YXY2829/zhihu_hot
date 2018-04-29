@@ -43,7 +43,64 @@ def get_info(url):
 	collection.insert_many(data_list)
 	return data_list
 
-url = 'https://api.zhihu.com/topstory/hot-list?limit=10'
+url = 'https://api.zhihu.com/topstory/hot-list'
 data_list = get_info(url)
 for da in data_list:
 	pprint(da)
+
+
+"""
+ 'paging': {'is_end': False,
+            'is_start': True,
+            'next': 'https://api.zhihu.com/questions/275021771/answers?limit=10&offset=10',
+            'previous': 'https://api.zhihu.com/questions/275021771/answers?limit=10&offset=0',
+            'totals': 7199}}
+"""
+
+def get_answer(url):
+	# url = 'https://api.zhihu.com/questions/{}/answers?limit=10&offset=0'.format(question_id)
+	r = requests.get(url, headers=headers)
+	j = r.json()
+	all_answer = j.get('data')
+
+	answer_list = []
+	for answer in all_answer:
+		d = dict()
+		author = answer.get('author', {})
+		d['answer_author_name'] = author.get('name')
+		d['answer_author_gender'] = author.get('gender')
+		d['answer_author_headline'] = author.get('headline')
+		d['answer_author_type'] = author.get('type')
+		d['answer_author_url'] = author.get('url')
+		d['answer_author_url_token'] = author.get('url_token')
+		question = answer.get('question')
+		d['question_id'] = question.get('id')
+		d['question_title'] = question.get('title')
+		d['answer_url'] = answer.get('url')
+		d['updated_time'] = answer.get('updated_time')
+		pprint(d)
+		answer_list.append(d)
+
+		collection_name = 'question_' + str(d['question_id'])
+		collection = db[collection_name]
+		collection.insert_many(answer_list)
+
+	paging = j.get('paging')
+	is_end = paging.get('is_end')
+	if not is_end:
+		next_url = paging.get('next')
+		get_answer(next_url)
+
+
+def get_answer_data(url):
+	# 'https://api.zhihu.com/answers/378472913'
+	r = requests.get(url, headers=headers)
+	j = r.json()
+
+
+def main():
+	pass
+
+
+if __name__ == '__main__':
+	main()
